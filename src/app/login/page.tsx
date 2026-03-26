@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShieldCheck, Banknote } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   sanitizeEmail,
@@ -33,12 +33,30 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<AllowedRole | "">("agency");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Si el usuario marcó "Mantener sesión" y tiene sesión activa, enviarlo directo al dashboard
+  useEffect(() => {
+    let cancelled = false;
+    if (typeof window === "undefined") return;
+    const remembered = window.localStorage.getItem("netrise-remember");
+    if (remembered !== "true") return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!cancelled && session) {
+        router.replace("/dashboard");
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const setFirstNameSafe = useCallback((v: string) => setFirstName(sanitizeName(v)), []);
   const setLastNameSafe = useCallback((v: string) => setLastName(sanitizeName(v)), []);
@@ -74,22 +92,29 @@ export default function LoginPage() {
     if (mode === "register") {
       setLoading(true);
       try {
+        const roleValue = sanitizeRole(role) || "agency";
+        const firstNameVal = sanitizeName(firstName).trim();
+        const lastNameVal = sanitizeName(lastName).trim();
+        const metadata: Record<string, string> = { role: roleValue };
+        if (firstNameVal) metadata.first_name = firstNameVal;
+        if (lastNameVal) metadata.last_name = lastNameVal;
+
         const { error } = await supabase.auth.signUp({
           email: rawEmail,
           password: rawPassword,
           options: {
-            data: {
-              role: sanitizeRole(role) || "agency",
-              first_name: sanitizeName(firstName),
-              last_name: sanitizeName(lastName),
-            },
+            data: metadata,
           },
         });
         if (error) {
           if (error.message.includes("already registered") || error.code === "user_already_exists") {
+            setMode("login");
+            setPassword("");
+            setConfirmPassword("");
             setMessage({ type: "error", text: t("login.register.errorEmailTaken") });
           } else {
-            setMessage({ type: "error", text: t("login.register.error") });
+            const detail = error.message?.trim() || t("login.register.error");
+            setMessage({ type: "error", text: detail });
           }
           setLoading(false);
           return;
@@ -114,8 +139,39 @@ export default function LoginPage() {
       return;
     }
 
-    // Login: de momento solo validación (sin backend)
-    console.info("[Login] Sign in (no backend yet):", { email: rawEmail, rememberMe });
+    // Login real con Supabase
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: rawEmail,
+        password: rawPassword,
+      });
+
+      if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes("invalid") || msg.includes("credential") || msg.includes("invalid_grant")) {
+          setMessage({ type: "error", text: t("login.login.invalid") });
+        } else {
+          setMessage({ type: "error", text: t("login.login.error") });
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        if (rememberMe) {
+          window.localStorage.setItem("netrise-remember", "true");
+        } else {
+          window.localStorage.removeItem("netrise-remember");
+        }
+      }
+
+      router.push("/dashboard");
+    } catch {
+      setMessage({ type: "error", text: t("login.register.error") });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -2,6 +2,7 @@ export type ProfileRole = "agency" | "freelancer" | "closer";
 
 export interface AgencyProfile {
   photoUrl: string;
+  bannerUrl: string;
   agencyName: string;
   website: string;
   country: string;
@@ -11,10 +12,12 @@ export interface AgencyProfile {
   citiesOperate: string[];
   avgTicket: string;
   commissionCloser: number; // 0-100 or similar
+  bio: string;
 }
 
 export interface FreelancerProfile {
   photoUrl: string;
+  bannerUrl: string;
   tradeName: string;
   portfolio: string;
   country: string;
@@ -23,10 +26,12 @@ export interface FreelancerProfile {
   niches: string[];
   citiesOperate: string[];
   avgTicket: string;
+  bio: string;
 }
 
 export interface CloserProfile {
   photoUrl: string;
+  bannerUrl: string;
   country: string;
   languages: string[];
   salesExperience: string;
@@ -36,12 +41,14 @@ export interface CloserProfile {
   minCommission: string;
   salesRoleType: string;
   availability: string;
+  bio: string;
 }
 
 export type ProfileFormState = AgencyProfile | FreelancerProfile | CloserProfile;
 
 export const emptyAgencyProfile: AgencyProfile = {
   photoUrl: "",
+  bannerUrl: "",
   agencyName: "",
   website: "",
   country: "",
@@ -51,10 +58,12 @@ export const emptyAgencyProfile: AgencyProfile = {
   citiesOperate: [],
   avgTicket: "",
   commissionCloser: 0,
+  bio: "",
 };
 
 export const emptyFreelancerProfile: FreelancerProfile = {
   photoUrl: "",
+  bannerUrl: "",
   tradeName: "",
   portfolio: "",
   country: "",
@@ -63,10 +72,12 @@ export const emptyFreelancerProfile: FreelancerProfile = {
   niches: [],
   citiesOperate: [],
   avgTicket: "",
+  bio: "",
 };
 
 export const emptyCloserProfile: CloserProfile = {
   photoUrl: "",
+  bannerUrl: "",
   country: "",
   languages: [],
   salesExperience: "",
@@ -76,4 +87,5 @@ export const emptyCloserProfile: CloserProfile = {
   minCommission: "",
   salesRoleType: "",
   availability: "",
+  bio: "",
 };

@@ -40,7 +40,10 @@ export function sanitizeEmail(value: string): string {
   return trimmed.replace(/[^\w.@+-]/g, "");
 }
 
-/** Sanitiza campo de contraseña: sin HTML, longitud máxima (no revelar reglas) */
+/**
+ * Sanitiza campo de contraseña: solo limita longitud.
+ * Se permiten letras, números, espacios y caracteres especiales; no se elimina ningún carácter.
+ */
 export function sanitizePassword(value: string): string {
   return value.slice(0, MAX_PASSWORD_LENGTH);
 }

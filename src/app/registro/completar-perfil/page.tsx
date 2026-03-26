@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { User } from "lucide-react";
 import { TagInput } from "@/components/TagInput";
 import { PhotoDropzone } from "@/components/PhotoDropzone";
 import {
@@ -89,6 +90,7 @@ export default function CompletarPerfilPage() {
 
   const progress = role ? getProfileProgress(role, role === "agency" ? agency : role === "freelancer" ? freelancer : closer) : { filled: 0, total: 10, percent: 0 };
   const headingName = userName.trim() || "there";
+  const closerMinCommissionPct = Math.min(100, Math.max(0, Number(closer.minCommission) || 0));
 
   if (role === null) {
     return (
@@ -164,6 +166,49 @@ export default function CompletarPerfilPage() {
               selectText={t("profile.photoSelect")}
               aria-label={t("profile.photo")}
             />
+
+            <div className="mt-6">
+              <PhotoDropzone
+                value={role === "agency" ? agency.bannerUrl : role === "freelancer" ? freelancer.bannerUrl : closer.bannerUrl}
+                onChange={(v) => {
+                  if (role === "agency") setAgency((p) => ({ ...p, bannerUrl: v }));
+                  else if (role === "freelancer") setFreelancer((p) => ({ ...p, bannerUrl: v }));
+                  else setCloser((p) => ({ ...p, bannerUrl: v }));
+                }}
+                label={t("profile.bannerPhoto")}
+                optionalLabel={t("profile.bannerPhotoOptional")}
+                dropText={t("profile.bannerPhotoDrop")}
+                selectText={t("profile.bannerPhotoSelect")}
+                aria-label={t("profile.bannerPhoto")}
+              />
+            </div>
+
+            <div className="mb-6 mt-6 border-t border-[var(--color-border)] pt-6">
+              <h3 className="mb-2 flex items-center gap-2 text-base font-semibold text-[var(--color-title)]">
+                <User className="h-5 w-5 text-[var(--color-primary)]" aria-hidden />
+                {t("profile.professionalProfile")}
+              </h3>
+              <label htmlFor="profile-bio" className="mb-2 block text-sm font-medium text-[var(--color-title)]">
+                {t("profile.professionalBio")}
+              </label>
+              <textarea
+                id="profile-bio"
+                rows={4}
+                className="min-h-[8rem] w-full resize-y rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                placeholder={t("profile.bioPlaceholder")}
+                value={role === "agency" ? (agency.bio ?? "") : role === "freelancer" ? (freelancer.bio ?? "") : (closer.bio ?? "")}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (role === "agency") setAgency((p) => ({ ...p, bio: v }));
+                  else if (role === "freelancer") setFreelancer((p) => ({ ...p, bio: v }));
+                  else setCloser((p) => ({ ...p, bio: v }));
+                }}
+                aria-describedby="profile-bio-hint"
+              />
+              <p id="profile-bio-hint" className="mt-1.5 text-sm text-[var(--color-muted)]">
+                {t("profile.bioSuggestion")}
+              </p>
+            </div>
 
             {role === "agency" && (
               <>
@@ -415,15 +460,34 @@ export default function CompletarPerfilPage() {
                   />
                 </div>
                 <div className="mb-4">
-                  <label htmlFor="cl-min-commission" className="mb-2 block text-sm font-medium text-[var(--color-title)]">{t("profile.minCommission")}</label>
-                  <input
-                    id="cl-min-commission"
-                    type="text"
-                    inputMode="decimal"
-                    className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                    value={closer.minCommission}
-                    onChange={(e) => setCloser((p) => ({ ...p, minCommission: e.target.value }))}
-                  />
+                  <label htmlFor="cl-min-commission" className="mb-2 block text-sm font-medium text-[var(--color-title)]">
+                    {t("profile.minCommission")} ({closerMinCommissionPct}%)
+                  </label>
+                  <div className="flex gap-3 items-center">
+                    <input
+                      id="cl-min-commission"
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={closerMinCommissionPct}
+                      onChange={(e) => setCloser((p) => ({ ...p, minCommission: e.target.value }))}
+                      className="range-primary flex-1"
+                      style={{ "--range-percent": `${closerMinCommissionPct}%` } as React.CSSProperties}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={closerMinCommissionPct}
+                      aria-label={t("profile.minCommission")}
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={closerMinCommissionPct}
+                      onChange={(e) => setCloser((p) => ({ ...p, minCommission: String(Math.min(100, Math.max(0, Number(e.target.value) || 0))) }))}
+                      className="w-16 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-center text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                      aria-label={t("profile.minCommission")}
+                    />
+                  </div>
                 </div>
                 <div className="mb-4">
                   <label htmlFor="cl-role-type" className="mb-2 block text-sm font-medium text-[var(--color-title)]">{t("profile.salesRoleType")}</label>
